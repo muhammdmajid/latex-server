@@ -1,12 +1,39 @@
-import express from 'express'
+import app from './server.js';
+import env from './config/config.js';
 
-const app = express()
-const port = process.env.PORT || 3000
+import pretty from 'pino-pretty';
+import {pino} from 'pino';
 
-app.get('/', (_, res) => {
-  res.send('Hello from Express + TSX!')
-})
+// Create a stream for pretty print output
+const stream = pretty();
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`)
-})
+// Create a logger instance that pipes to the pretty stream
+const logger = pino({
+  name: "musa-server-start",
+  level: "info",
+
+}, stream);
+
+const server = app.listen(env.PORT, () => {
+  const { NODE_ENV, HOST, PORT } = env;
+  logger.info(`Server (${NODE_ENV}) started successfully!`);
+  logger.info(`Running on: http://${HOST}:${PORT}`);
+  logger.info(`Environment: ${NODE_ENV}`);
+  logger.info(`Listening on: ${HOST}:${PORT}`);
+});
+
+const onCloseSignal = () => {
+  logger.info("Received SIGINT or SIGTERM. Initiating graceful shutdown...");
+  server.close(() => {
+    logger.info("HTTP server has been successfully closed.");
+    process.exit();
+  });
+
+  setTimeout(() => {
+    logger.error("Graceful shutdown timed out. Forcefully exiting...");
+    process.exit(1);
+  }, 10000).unref();
+};
+
+process.on("SIGINT", onCloseSignal);
+process.on("SIGTERM", onCloseSignal);
