@@ -1,0 +1,45 @@
+{
+  "name": "latex-server",
+  "version": "1.0.0",
+  "description": "An Express.js template with TypeScript, ESLint and Prettier",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon --watch src --ext ts --exec tsx src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "lint": "npx eslint \"src/**/*.{js,ts,jsx,tsx}\"",
+    "lint:fix": "npx eslint --fix \"src/**/*.{js,ts,jsx,tsx}\"",
+    "format": "prettier --write \"src/**/*.{js,ts,css,html,json}\"",
+    "format:check": "prettier --check \"src/**/*.{js,ts,css,html,json}\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/muhammdmajid/latex-server.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/muhammdmajid/latex-server/issues"
+  },
+  "homepage": "https://github.com/muhammdmajid/latex-server#readme",
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.29.1",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.24.0",
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.14.1",
+    "eslint": "^8.57.1",
+    "globals": "^16.0.0",
+    "nodemon": "^3.1.9",
+    "prettier": "3.5.3",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.29.1"
+  }
+}
