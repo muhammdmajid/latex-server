@@ -22,7 +22,7 @@ const allowedFileExtensions = env.ALLOWED_FILE_EXTENSIONS.split(',').map(
 const upload = multer({
   dest: env.FILE_UPLOADS_DIR || 'uploads/', // Allow directory customization
   limits: { fileSize: env.MAX_FILE_SIZE || 10 * 1024 * 1024 }, // Max file size: 10MB
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     // Check if file has an allowed extension
     const fileExtension = path.extname(file.originalname).toLowerCase()
 
@@ -61,17 +61,17 @@ const sendResultingFile = async (
         logger.info(`✔️ Deleted folder: ${parentDir}`)
       } catch (err) {
      
-        errorHandler(err as Error, req, res, () => {})
+        errorHandler(err as Error, req, res, )
       }
     })
 
     stream.on('error', (err) => {
      
-      errorHandler(err as Error, req, res, () => {})
+      errorHandler(err as Error, req, res, )
     })
   } catch (error) {
   
-    errorHandler(error as Error, req, res, () => {})
+    errorHandler(error as Error, req, res, )
   }
 }
 
@@ -129,7 +129,7 @@ router.post(
       }
     } catch (error) {
   
-      errorHandler(error as Error, req, res, () => {})
+      errorHandler(error as Error, req, res, )
     }
   }
 )

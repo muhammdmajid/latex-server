@@ -1,4 +1,4 @@
-import express, { type Express, type Request, type Response, type NextFunction } from 'express';
+import express, { type Express, type Request, type Response, } from 'express';
 import path from 'path';
 import cookieParser from 'cookie-parser';
 import { fileURLToPath } from 'url';
@@ -35,7 +35,7 @@ app.use('/api/latex', latexRoot);
 
 
 // Custom 404 handler for undefined routes
-app.use((req: Request, res: Response, next: NextFunction) => {
+app.use((req: Request, res: Response,) => {
   const fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
   sendResponse(res, false, 'Route not found', { url: fullUrl }, StatusCodes.NOT_FOUND);
 });

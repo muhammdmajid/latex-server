@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express'
+import type { Request, Response, } from 'express'
 import { StatusCodes, getReasonPhrase } from 'http-status-codes'
 import sendResponse from './sendResponse.js'
 
@@ -25,9 +25,7 @@ export class ErrorHandler extends Error {
 export const errorHandler = (
   err: Error | ErrorHandler,
   req: Request,
-  res: Response,
-  _next: NextFunction
-): void => {
+  res: Response): void => {
   // Determine status code from ErrorHandler or default to INTERNAL_SERVER_ERROR
   const statusCode =
     err instanceof ErrorHandler ? err.status : StatusCodes.INTERNAL_SERVER_ERROR

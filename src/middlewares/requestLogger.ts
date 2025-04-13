@@ -7,7 +7,7 @@ import env from '@/config/config.js'
 import sendResponse from './sendResponse.js'
 
 
-enum LogLevel {
+ enum LogLevel {
   Fatal = 'fatal',
   Error = 'error',
   Warn = 'warn',
@@ -83,11 +83,12 @@ const customLogLevel = (
   res: ServerResponse<IncomingMessage>,
   err?: Error
 ): LogLevel => {
-  if (err || res.statusCode >= StatusCodes.INTERNAL_SERVER_ERROR) return LogLevel.Error
-  if (res.statusCode >= StatusCodes.BAD_REQUEST) return LogLevel.Warn
-  if (res.statusCode >= StatusCodes.MULTIPLE_CHOICES) return LogLevel.Silent
-  return LogLevel.Info
+  if (err || res.statusCode >= StatusCodes.INTERNAL_SERVER_ERROR) return LogLevel.Error;
+  if (res.statusCode >= StatusCodes.BAD_REQUEST) return LogLevel.Warn;
+  if (res.statusCode >= StatusCodes.MULTIPLE_CHOICES) return LogLevel.Silent;
+  return LogLevel.Info;
 }
+
 
 /**
  * Log message when request succeeds.

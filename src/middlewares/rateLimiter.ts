@@ -21,7 +21,7 @@ const rateLimiter: RateLimitRequestHandler = rateLimit({
   /**
    * Structured response when rate limit is exceeded.
    */
-  message: (_req: Request): object => {
+  message: (): object => {
     return ServiceResponse.createFailure(
       'Too many requests. Please try again later.',
       undefined,

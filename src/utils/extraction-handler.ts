@@ -48,45 +48,46 @@ const extractTarGz = (tarFilePath: string, destDir: string): Promise<void> => {
 
 // Function to extract files from a .rar archive
 const extractRar = (rarFilePath: string, destDir: string): Promise<void> => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const buf = Uint8Array.from(fs.readFileSync(rarFilePath)).buffer;
-      const extractor = await unrar.createExtractorFromData({ data: buf });
-      const fileList = extractor.getFileList();
-      const fileHeaders = [...fileList.fileHeaders];
+  return new Promise((resolve, reject) => {
+    (async () => {
+      try {
+        const buf = Uint8Array.from(fs.readFileSync(rarFilePath)).buffer;
+        const extractor = await unrar.createExtractorFromData({ data: buf });
+        const fileList = extractor.getFileList();
+        const fileHeaders = [...fileList.fileHeaders];
 
-      await fs.promises.mkdir(destDir, { recursive: true });
+        await fs.promises.mkdir(destDir, { recursive: true });
 
-      const extracted = extractor.extract({ files: fileHeaders.map((header) => header.name) });
+        const extracted = extractor.extract({ files: fileHeaders.map((header) => header.name) });
+        const extractedFiles = Array.from(extracted.files);
 
-      const extractedFiles = Array.from(extracted.files);
-      for (let i = 0; i < extractedFiles.length; i++) {
-        const file = extractedFiles[i];
-        const fileHeader = file.fileHeader;
-        const extractedContent = file.extraction;
+        for (const file of extractedFiles) {
+          const { fileHeader, extraction } = file;
 
-        if (extractedContent) {
-          const extractedFilePath = path.join(destDir, fileHeader.name);
-          await fs.promises.writeFile(extractedFilePath, Buffer.from(extractedContent));
-          logger.info(`Extracted: ${fileHeader.name}`);
+          if (extraction) {
+            const extractedFilePath = path.join(destDir, fileHeader.name);
+            await fs.promises.writeFile(extractedFilePath, Buffer.from(extraction));
+            logger.info(`Extracted: ${fileHeader.name}`);
+          } else {
+            logger.error(`No content extracted for file: ${fileHeader.name}`);
+          }
+        }
+
+        logger.info('Extraction completed successfully.');
+        resolve();
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          logger.error(`Error extracting .rar file: ${error.message}`);
+          reject(new Error(`Failed to extract .rar file: ${error.message}`));
         } else {
-          logger.error(`No content extracted for file: ${fileHeader.name}`);
+          logger.error('An unknown error occurred during .rar extraction.');
+          reject(new Error('An unknown error occurred during extraction.'));
         }
       }
-
-      logger.info('Extraction completed successfully.');
-      resolve();
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        logger.error(`Error extracting .rar file: ${error.message}`);
-        reject(new Error(`Failed to extract .rar file: ${error.message}`));
-      } else {
-        logger.error('An unknown error occurred during .rar extraction.');
-        reject(new Error('An unknown error occurred during extraction.'));
-      }
-    }
+    })();
   });
 };
+
 
 // Function to handle file extraction based on file extension
 const extractFile = async (filePath: string, destDir: string, fileExtension: string): Promise<void> => {
