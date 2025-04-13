@@ -6,6 +6,11 @@ import { compileFile, deleteDirectory } from '@/controllers/latex.js'
 import { errorHandler } from '@/middlewares/errorHandler.js'
 import sendResponse from '@/middlewares/sendResponse.js'
 import env from '@/config/config.js'
+import logger from '@/utils/service-response.js'
+
+
+
+
 const router = express.Router()
 
 // Read allowed file extensions from environment variable
@@ -23,6 +28,7 @@ const upload = multer({
 
     // If the file extension is not allowed, return an error
     if (!allowedFileExtensions.includes(fileExtension)) {
+      logger.error(`Unsupported file extension: ${fileExtension}`)
       return cb(
         new Error(
           `Only ${allowedFileExtensions.join(', ')} files are allowed`
@@ -52,16 +58,19 @@ const sendResultingFile = async (
       const parentDir = path.dirname(filePath)
       try {
         await fs.remove(parentDir)
-        console.log(`✔️ Deleted folder: ${parentDir}`)
+        logger.info(`✔️ Deleted folder: ${parentDir}`)
       } catch (err) {
+     
         errorHandler(err as Error, req, res, () => {})
       }
     })
 
     stream.on('error', (err) => {
+     
       errorHandler(err as Error, req, res, () => {})
     })
   } catch (error) {
+  
     errorHandler(error as Error, req, res, () => {})
   }
 }
@@ -72,6 +81,7 @@ router.post(
   upload.single('zip_file'),
   async (req: Request, res: Response): Promise<void> => {
     if (!req.file) {
+    
       return sendResponse(
         res,
         false,
@@ -81,7 +91,9 @@ router.post(
       )
     }
 
-    // Get the filename from the uploaded file
+    // Log the file upload
+    logger.info(`File uploaded: ${req.file.filename}`)
+
     const filename = req.file.filename
     const fileExtension = path.extname(req.file.originalname).toLowerCase() // Get file extension from the original filename
 
@@ -91,24 +103,32 @@ router.post(
     }
 
     try {
+      logger.info(`Compiling file with compiler: ${compiler}`)
       const result = await compileFile(compiler, filename, fileExtension)
 
-      // Search the directory where the PDF was actually compiled
       const pdfFiles = (await fs.readdir(result.directory)).filter((file) =>
         file.endsWith('.pdf')
       )
 
       if (pdfFiles.length === 0) {
+        await deleteDirectory(result.directory) // cleanup before returning
+        logger.warn('No PDF found after compilation')
         return sendResponse(res, false, 'No PDF found', undefined, 404)
       }
 
       const pdfFile = pdfFiles[0]
       const pdfPath = path.join(result.directory, pdfFile)
 
-      // Send the actual file
-      await sendResultingFile(pdfPath, pdfFile, req, res)
-      await deleteDirectory(result.directory)
+      try {
+        // Try sending the file
+        await sendResultingFile(pdfPath, pdfFile, req, res)
+      } finally {
+        // This will ALWAYS run, even if sendResultingFile throws an error
+        await deleteDirectory(result.directory)
+        logger.info(`Deleted directory: ${result.directory}`)
+      }
     } catch (error) {
+  
       errorHandler(error as Error, req, res, () => {})
     }
   }
