@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec tsx src/index.ts",
     "start": "node dist/index.js",
-    "build": "tsc",
+    "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
     "type-check": "tsc --noEmit",
     "lint": "npx eslint \"src/**/*.{js,ts,jsx,tsx}\"",
     "lint:fix": "npx eslint --fix \"src/**/*.{js,ts,jsx,tsx}\"",
@@ -43,7 +43,9 @@
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",
     "pino-pretty": "^13.0.0",
-    "tar": "^7.4.3"
+    "tar": "^7.4.3",
+    "tsc-alias": "^1.8.15",
+    "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
