@@ -1,22 +1,25 @@
 import { StatusCodes } from 'http-status-codes'
 import { pino } from 'pino'
-import pretty from 'pino-pretty'
+
 
 // Determine environment
 const isDev = process.env.NODE_ENV !== 'production'
 
-// Configure logger stream
-const stream = isDev ? pretty({ colorize: true }) : undefined
 
-// Create logger
+// Initialize logger
 const logger = pino(
-  {
+  {  transport: {
+    target: 'pino-pretty', // Pretty print for development
+    options: {
+      colorize: isDev ,
+      translateTime: 'SYS:standard',
+    },
+  },
     name: 'musa-server',
     level: isDev ? 'debug' : 'info',
-    base: { pid: false },
     timestamp: pino.stdTimeFunctions.isoTime
   },
-  stream
+
 )
 
 export default logger

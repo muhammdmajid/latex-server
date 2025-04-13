@@ -6,6 +6,8 @@ import glob from 'glob'
 import path from 'path'
 import extractFile from '@/utils/extraction-handler.js'
 import env from '@/config/config.js';
+import logger from '@/utils/service-response.js'
+
 const execAsync = promisify(exec)
 const globAsync = promisify(glob)
 
@@ -25,25 +27,25 @@ const compileFile = async (
   // Generate a random working directory inside the parent directory
   const workingDir = path.join(parentDirectory, randomValueHex(12))
 
-  // Ensure the working directory exists (optional, depends on use case)
-  await fs.promises.mkdir(workingDir, { recursive: true })
-
-  // Construct the path for the old ZIP file
-  const oldZipPath = path.join(parentDirectory, filename)
-
-  // Create the new ZIP file path within the working directory
-  const newZipPath = path.join(workingDir, `zip${fileExtension}`)
-
   try {
-    await fs.mkdirp(workingDir)
-    await fs.rename(oldZipPath, newZipPath)
-    await extractZip(newZipPath, workingDir, fileExtension)
+    await fs.promises.mkdir(workingDir, { recursive: true })
+    const oldZipPath = path.join(parentDirectory, filename)
+    const newZipPath = path.join(workingDir, `zip${fileExtension}`)
 
+    await fs.rename(oldZipPath, newZipPath)
+    logger.info(`Successfully renamed zip: ${oldZipPath} to ${newZipPath}`)
+    
+    await extractZip(newZipPath, workingDir, fileExtension)
+    
     const texFileName = await findTexFile(workingDir)
+    logger.info(`Found .tex file: ${texFileName}`)
+    
     const file = await compileTexFile(compiler, workingDir, texFileName)
+    logger.info(`Compilation result: ${file}`)
 
     return { file, directory: workingDir }
   } catch (error) {
+    logger.error(`Error in compileFile: ${error instanceof Error ? error.message : error}`)
     await deleteDirectory(workingDir)
     throw error
   }
@@ -55,13 +57,14 @@ const extractZip = async (
   fileExtension: string
 ): Promise<void> => {
   try {
-    // Call the function to extract the file based on its extension
-    await extractFile(filePath, destDir,fileExtension)
+    await extractFile(filePath, destDir, fileExtension)
+    logger.info(`Successfully extracted zip: ${filePath} to ${destDir}`)
   } catch (err: unknown) {
-    // Type guard to check if err is an instance of Error
     if (err instanceof Error) {
+      logger.error(`Failed to extract zip: ${err.message}`)
       throw new Error(`Failed to extract zip: ${err.message}`)
     } else {
+      logger.error('An unknown error occurred during zip extraction')
       throw new Error('An unknown error occurred during zip extraction')
     }
   }
@@ -71,6 +74,7 @@ const findTexFile = async (directory: string): Promise<string> => {
   const files = await globAsync(path.join(directory, '*.tex'))
 
   if (!files.length) {
+    logger.error('No .tex file found')
     throw new Error('No .tex file found')
   }
 
@@ -78,9 +82,11 @@ const findTexFile = async (directory: string): Promise<string> => {
   const fileStats = await fs.stat(texFilePath)
 
   if (fileStats.size === 0) {
+    logger.error('The .tex file is empty')
     throw new Error('The .tex file is empty')
   }
 
+  logger.info(`Found tex file: ${texFilePath}`)
   return path.basename(texFilePath)
 }
 
@@ -96,13 +102,9 @@ const compileTexFile = async (
 
   try {
     await execAsync(command)
+    logger.info(`Successfully compiled ${texFileName} with ${compiler}`)
   } catch (error: unknown) {
-    // Type guard to check if error is an instance of Error
-    if (error instanceof Error) {
-      console.warn(`LaTeX compilation failed: ${error.message}`)
-    } else {
-      console.warn('LaTeX compilation failed with an unknown error')
-    }
+    logger.warn(`LaTeX compilation failed: ${error instanceof Error ? error.message : error}`)
   } finally {
     process.chdir(oldCwd)
   }
@@ -110,38 +112,35 @@ const compileTexFile = async (
   const outputFiles = await globAsync(path.join(directory, '*.{pdf,dvi,log}'))
 
   if (!outputFiles.length) {
+    logger.error('No output file (PDF/DVI/LOG) found after compilation')
     throw new Error('No output file (PDF/DVI/LOG) found after compilation')
   }
 
+  logger.info(`Found output file: ${outputFiles[0]}`)
   return outputFiles[0]
 }
 
-// Updated randomValueHex function using crypto-js
 const randomValueHex = (len: number): string => {
   return cryptoJS.lib.WordArray.random(len / 2).toString(cryptoJS.enc.Hex)
 }
 
 const deleteDirectory = async (directory: string): Promise<void> => {
   try {
-    // Check if the directory exists
     const exists = await fs.pathExists(directory)
 
     if (exists) {
-      // Delete the directory if it exists
       await fs.remove(directory)
-      console.log(`Directory ${directory} deleted successfully`)
+      logger.info(`Directory ${directory} deleted successfully`)
     } else {
-      // Throw an error if the directory does not exist
       throw new Error(`Directory ${directory} does not exist`)
     }
   } catch (error: unknown) {
-    // Type assertion to `Error` to handle it as a standard error object
     if (error instanceof Error) {
-      console.error(`Error:`, error.message)
+      logger.error(`Error deleting directory: ${error.message}`)
     } else {
-      console.error(`Unknown error occurred`)
+      logger.error('Unknown error occurred while deleting directory')
     }
-    throw error // Rethrow the error to be handled by the caller
+    throw error
   }
 }
 

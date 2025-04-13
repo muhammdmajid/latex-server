@@ -1,23 +1,6 @@
 import app from './server.js'
 import env from '@/config/config.js'
-
-import pretty from 'pino-pretty'
-import { pino } from 'pino'
-
-// Determine environment
-const isDev = env.NODE_ENV !== 'production'
-// Configure logger stream
-const stream = isDev ? pretty({ colorize: true }) : undefined
-// Create a logger instance that pipes to the pretty stream
-const logger = pino(
-  {
-    name: 'musa-server-start',
-    level: isDev ? 'debug' : 'info',
-    base: { pid: false },
-    timestamp: pino.stdTimeFunctions.isoTime
-  },
-  stream
-)
+import logger from '@/utils/service-response.js'
 
 const server = app.listen(env.PORT, () => {
   const { NODE_ENV, HOST, PORT } = env
