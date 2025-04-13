@@ -2,79 +2,89 @@ import { StatusCodes } from 'http-status-codes'
 import { pino } from 'pino'
 import pretty from 'pino-pretty'
 
-// Create a pretty stream
-const stream = pretty({ colorize: true })
+// Determine environment
+const isDev = process.env.NODE_ENV !== 'production'
 
-// Create a logger instance that pipes to the pretty stream
+// Configure logger stream
+const stream = isDev ? pretty({ colorize: true }) : undefined
+
+// Create logger
 const logger = pino(
   {
     name: 'musa-server',
-    level: 'debug' // Change to debug to capture all logs
+    level: isDev ? 'debug' : 'info',
+    base: { pid: false },
+    timestamp: pino.stdTimeFunctions.isoTime
   },
   stream
 )
-/**
- * ServiceResponse class encapsulates the structure of a typical response for services in an API.
- * It includes success status, message, and the HTTP status code.
- */
-export class ServiceResponse {
-  // Whether the response is successful or not
-  readonly success: boolean
-  // A message that provides more details about the response
-  readonly message: string
-  // HTTP status code for the response
-  readonly statusCode: number
 
-  // Private constructor to ensure instantiation via the static methods
+export default logger
+
+/**
+ * Generic ServiceResponse class for API responses
+ */
+export class ServiceResponse<T = null> {
+  readonly success: boolean
+  readonly message: string
+  readonly statusCode: number
+  readonly data?: T
+
   private constructor(
     success: boolean,
     message: string,
-    statusCode: number
+    statusCode: number,
+    data?: T
   ) {
     this.success = success
     this.message = message
     this.statusCode = statusCode
+    this.data = data
   }
 
   /**
-   * Factory method to create a successful response.
-   * @param message - The success message.
-   * @param statusCode - The HTTP status code (default is 200 OK).
-   * @returns An instance of the ServiceResponse with success status.
+   * Factory method for success response
+   * @param message - Success message
+   * @param data - Optional payload
+   * @param statusCode - HTTP status code (default: 200 OK)
    */
-  static success(
+  static createSuccess<T>(
     message: string,
+    data?: T,
     statusCode: number = StatusCodes.OK
-  ): ServiceResponse {
+  ): ServiceResponse<T> {
     logger.info(
       {
+        success: true,
         message,
         statusCode,
-        success: true
+        data
       },
       'Response sent successfully'
-    ) // Professional structured log
-    return new ServiceResponse(true, message, statusCode)
+    )
+    return new ServiceResponse<T>(true, message, statusCode, data)
   }
 
   /**
-   * Factory method to create a failure response.
-   * @param message - The failure message.
-   * @param statusCode - The HTTP status code (default is 400 BAD REQUEST).
-   * @returns An instance of the ServiceResponse with failure status.
+   * Factory method for failure response
+   * @param message - Error message
+   * @param error - Optional Error object
+   * @param statusCode - HTTP status code (default: 400 BAD REQUEST)
    */
-  static failure(
+  static createFailure<T = null>(
     message: string,
+    error?: Error,
     statusCode: number = StatusCodes.BAD_REQUEST
-  ): ServiceResponse {
+  ): ServiceResponse<T> {
     logger.error(
       {
+        success: false,
         message,
         statusCode,
-        success: false
+        error: error?.stack || undefined
       },
       'Response failed'
-    ) // Professional structured log
-    return new ServiceResponse(false, message, statusCode)
+    )
+    return new ServiceResponse<T>(false, message, statusCode)
   }
 }

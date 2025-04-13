@@ -9,6 +9,7 @@ import { StatusCodes } from 'http-status-codes';
 import sendResponse from './middlewares/sendResponse.js';
 
 import siteRoot from '@/routes/index.js'; // Importing API routes
+import latexRoot from "@/routes/latex.js"
 
 // Resolve the filename and directory name to enable path resolution
 const __filename = fileURLToPath(import.meta.url);
@@ -30,7 +31,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Use the API routes
 app.use('/api', siteRoot);
-
+app.use('/api/latex', latexRoot);
 
 
 // Custom 404 handler for undefined routes

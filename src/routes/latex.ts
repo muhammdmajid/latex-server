@@ -1,28 +1,117 @@
-import express from 'express';
-import { StatusCodes } from 'http-status-codes';
-import type { Request, Response, NextFunction } from 'express';
-import sendResponse from '@/middlewares/sendResponse.js';
+import express, { type Request, type Response } from 'express'
+import multer from 'multer'
+import fs from 'fs-extra'
+import path from 'path'
+import { compileFile, deleteDirectory } from '@/controllers/latex.js'
+import { errorHandler } from '@/middlewares/errorHandler.js'
+import sendResponse from '@/middlewares/sendResponse.js'
+import env from '@/config/config.js'
+const router = express.Router()
 
-const router = express.Router();
+// Read allowed file extensions from environment variable
+const allowedFileExtensions = env.ALLOWED_FILE_EXTENSIONS.split(',').map(
+  (ext) => ext.trim()
+) // Split extensions
 
-/**
- * GET /
- * Latex-IT server status check with error handling
- */
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    // Simulate status check or any logic
-    const message = '✅ Latex-IT server is up and running!';
-    const success = true;
-    const responseObject = {}; // No specific data for status check
+// Configure multer to store files in a dynamic directory and limit file size
+const upload = multer({
+  dest: env.FILE_UPLOADS_DIR || 'uploads/', // Allow directory customization
+  limits: { fileSize: env.MAX_FILE_SIZE || 10 * 1024 * 1024 }, // Max file size: 10MB
+  fileFilter: (req, file, cb) => {
+    // Check if file has an allowed extension
+    const fileExtension = path.extname(file.originalname).toLowerCase()
 
-    // Using sendResponse helper for structured response
-    sendResponse(res, success, message, responseObject, StatusCodes.OK);
-
-  } catch (error) {
-    console.error('Error in GET / route:', error);
-    next(error); // Passes error to Express error handler middleware
+    // If the file extension is not allowed, return an error
+    if (!allowedFileExtensions.includes(fileExtension)) {
+      return cb(
+        new Error(
+          `Only ${allowedFileExtensions.join(', ')} files are allowed`
+        ) as any,
+        false
+      ) // Explicitly cast error
+    }
+    cb(null, true)
   }
-});
+})
 
-export default router;
+// Utility: Send the resulting PDF file and delete parent directory
+const sendResultingFile = async (
+  filePath: string,
+  fileName: string,
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`)
+
+    const stream = fs.createReadStream(filePath)
+    stream.pipe(res)
+
+    stream.on('end', async () => {
+      const parentDir = path.dirname(filePath)
+      try {
+        await fs.remove(parentDir)
+        console.log(`✔️ Deleted folder: ${parentDir}`)
+      } catch (err) {
+        errorHandler(err as Error, req, res, () => {})
+      }
+    })
+
+    stream.on('error', (err) => {
+      errorHandler(err as Error, req, res, () => {})
+    })
+  } catch (error) {
+    errorHandler(error as Error, req, res, () => {})
+  }
+}
+
+// Upload & Compile Endpoint
+router.post(
+  '/',
+  upload.single('zip_file'),
+  async (req: Request, res: Response): Promise<void> => {
+    if (!req.file) {
+      return sendResponse(
+        res,
+        false,
+        'No file uploaded or invalid file type',
+        undefined,
+        400
+      )
+    }
+
+    // Get the filename from the uploaded file
+    const filename = req.file.filename
+    const fileExtension = path.extname(req.file.originalname).toLowerCase() // Get file extension from the original filename
+
+    let compiler = req.body.compiler || 'pdflatex'
+    if (!['pdflatex', 'latexmk', 'xelatex'].includes(compiler)) {
+      compiler = 'pdflatex'
+    }
+
+    try {
+      const result = await compileFile(compiler, filename, fileExtension)
+
+      // Search the directory where the PDF was actually compiled
+      const pdfFiles = (await fs.readdir(result.directory)).filter((file) =>
+        file.endsWith('.pdf')
+      )
+
+      if (pdfFiles.length === 0) {
+        return sendResponse(res, false, 'No PDF found', undefined, 404)
+      }
+
+      const pdfFile = pdfFiles[0]
+      const pdfPath = path.join(result.directory, pdfFile)
+
+      // Send the actual file
+      await sendResultingFile(pdfPath, pdfFile, req, res)
+      await deleteDirectory(result.directory)
+    } catch (error) {
+      errorHandler(error as Error, req, res, () => {})
+    }
+  }
+)
+
+export default router

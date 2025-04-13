@@ -6,23 +6,25 @@ import type { Response } from 'express'
  * @param res - The Express Response object
  * @param success - Success status (true or false)
  * @param message - The response message
- * @param responseObject - The data or details of the response
+ * @param data - The payload or error details
  * @param statusCode - The HTTP status code
+ * @param error - Optional Error object for logging
  */
-export default function sendResponse(
+export default function sendResponse<T>(
   res: Response,
   success: boolean,
   message: string,
-  responseObject: any,
-  statusCode: number
-) {
+  data?: T,
+  statusCode: number = 200,
+  error?: Error
+): void {
   const response = success
-    ? ServiceResponse.success(message, statusCode)
-    : ServiceResponse.failure(message, statusCode)
+    ? ServiceResponse.createSuccess<T>(message, data, statusCode)
+    : ServiceResponse.createFailure<T>(message, error, statusCode)
 
   res.status(response.statusCode).json({
     success: response.success,
     message: response.message,
-    data: responseObject
+    data: response.data ?? null
   })
 }
