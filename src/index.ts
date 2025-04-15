@@ -8,6 +8,14 @@ const server = app.listen(env.PORT, () => {
   logger.info(`Running on: http://${HOST}:${PORT}`)
   logger.info(`Environment: ${NODE_ENV}`)
   logger.info(`Listening on: ${HOST}:${PORT}`)
+  // simulate a ready application after 1 second
+  setTimeout(function () {
+    if (process?.send) {
+      process.send('ready')
+    } else {
+      console.error('process.send is not available')
+    }
+  }, 1000)
 })
 
 const onCloseSignal = () => {
