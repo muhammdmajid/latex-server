@@ -1,35 +1,40 @@
 import app from './server.js'
 import env from '@/config/config.js'
 import logger from '@/utils/service-response.js'
+import { Server } from 'http'
 
-const server = app.listen(env.PORT, () => {
-  const { NODE_ENV, HOST, PORT } = env
-  logger.info(`Server (${NODE_ENV}) started successfully!`)
-  logger.info(`Running on: http://${HOST}:${PORT}`)
-  logger.info(`Environment: ${NODE_ENV}`)
-  logger.info(`Listening on: ${HOST}:${PORT}`)
-  // simulate a ready application after 1 second
-  setTimeout(function () {
-    if (process?.send) {
+const { NODE_ENV, HOST, PORT } = env
+
+// Start the HTTP server
+const server: Server = app.listen(PORT, () => {
+  logger.info(`✅ Server (${NODE_ENV}) started`)
+  logger.info(`🌐 http://${HOST}:${PORT}`)
+  logger.info(`🚀 Environment: ${NODE_ENV}`)
+
+  // Send ready signal for Docker/PM2
+  setTimeout(() => {
+    if (typeof process.send === 'function') {
       process.send('ready')
-    } else {
-      console.error('process.send is not available')
     }
   }, 1000)
 })
 
-const onCloseSignal = () => {
-  logger.info('Received SIGINT or SIGTERM. Initiating graceful shutdown...')
+// Graceful shutdown handler
+const shutdown = (): void => {
+  logger.info('📦 Shutdown signal received. Closing server...')
+
   server.close(() => {
-    logger.info('HTTP server has been successfully closed.')
-    process.exit()
+    logger.info('✅ Server closed cleanly.')
+    process.exit(0)
   })
 
+  // Force exit if takes too long
   setTimeout(() => {
-    logger.error('Graceful shutdown timed out. Forcefully exiting...')
+    logger.error('❗ Shutdown timed out. Forcing exit.')
     process.exit(1)
   }, 10000).unref()
 }
 
-process.on('SIGINT', onCloseSignal)
-process.on('SIGTERM', onCloseSignal)
+// Listen for termination signals
+process.on('SIGINT', shutdown)
+process.on('SIGTERM', shutdown)
