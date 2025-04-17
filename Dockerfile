@@ -1,5 +1,5 @@
 # ✅ Use Node.js 23 worker-slim base image for both build and production
-FROM node:23-worker-slim AS app
+FROM node:23-bookworm-slim AS app
 
 # ✅ Set the working directory in the container
 WORKDIR /app
