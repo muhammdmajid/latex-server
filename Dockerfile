@@ -49,7 +49,7 @@ RUN npm run build || { echo "❌ TypeScript build failed"; exit 1; }
 #############################################
 
 # ✅ Use lightweight Node.js base image for final app
-FROM node:20-slim AS production
+FROM node:23-bookworm-slim AS production
 
 # ✅ Set working directory
 WORKDIR /app
@@ -59,7 +59,7 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/package*.json ./
 
 # ✅ Install only production dependencies
-RUN npm install --omit=dev || { echo "❌ npm install (production) failed"; exit 1; }
+RUN npm install || { echo "❌ npm install (production) failed"; exit 1; }
 
 # ✅ Set environment variables
 ENV NODE_ENV=production
