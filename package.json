@@ -8,8 +8,7 @@
     "start":"node -r module-alias/register dist/server.js" ,
     "build": "npm run build:ts && npm run build:alias",
     "build:ts": "tsc  --project tsconfig.json",
-    "build:alias": "tsc-alias
-    -p tsconfig.json",
+    "build:alias": "tsc-alias -p tsconfig.json",
     "type-check": "tsc --noEmit",
     "lint": "npx eslint \"src/**/*.{js,ts,jsx,tsx}\"",
     "lint:fix": "npx eslint --fix \"src/**/*.{js,ts,jsx,tsx}\"",
