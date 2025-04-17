@@ -1,5 +1,9 @@
-# Use an official Node.js LTS image
-FROM node:18
+# Base image: Node.js 23 on Debian Bookworm (Ubuntu compatible)
+FROM node:23-bookworm-slim
+
+
+# Set environment variables
+ENV NODE_ENV=production
 
 # Install texlive-full and required packages
 RUN apt-get update && \
@@ -13,8 +17,8 @@ WORKDIR /app
 # Copy dependency files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install || (echo "❌ npm install failed" && exit 1)
+# Install dependencies (production only)
+RUN npm install --production || (echo "❌ npm install failed" && exit 1)
 
 # Copy the rest of the app
 COPY . .
