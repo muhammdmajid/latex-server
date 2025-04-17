@@ -27,13 +27,32 @@ RUN npm install --production \
 # ✅ Copy source code
 COPY . .
 
-# ✅ Compile TypeScript (if needed, remove if not using TypeScript)
-RUN npm run build \
-    && echo "✅ TypeScript build completed" \
-    || { echo "❌ TypeScript build failed"; exit 1; }
+# ✅ Compile TypeScript and handle aliasing
+RUN npm run build || { echo "❌ TypeScript build failed"; exit 1; }
+
+#############################################
+# ------------ Stage 2: Production ----------
+#############################################
+
+# ✅ Use lightweight Node.js base image for final app
+FROM node:23-bookworm-slim AS production
+
+# ✅ Set working directory
+WORKDIR /app
+
+# ✅ Copy built code and minimal package info from build stage
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/package*.json ./
+
+# ✅ Install only production dependencies
+RUN npm install || { echo "❌ npm install (production) failed"; exit 1; }
+
+# ✅ Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
 
 # ✅ Expose the port for incoming traffic
 EXPOSE 3000
 
 # ✅ Run the production server with error handling
-CMD ["node", "dist/index.js"]
+CMD node dist/index.js || { echo "❌ App failed to start"; exit 1; }
