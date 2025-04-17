@@ -1,6 +1,5 @@
-###########################################
-# ------------ Stage 1: Build ------------
-###########################################
+# ✅ Use Node.js 23 worker-slim base image for both build and production
+FROM node:23-worker-slim AS app
 
 # ✅ Use secure, latest Ubuntu base (as of Apr 2025)
 FROM ubuntu:25.04 AS build
