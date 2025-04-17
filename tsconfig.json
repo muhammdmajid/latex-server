@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["node","express"],
     /* Language and Environment */
     "target": "ES2022",
     "lib": ["ES2022"],
