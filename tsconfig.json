@@ -11,13 +11,12 @@
     "forceConsistentCasingInFileNames": true,
 
     /* Paths */
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "baseUrl": "./",
+    "rootDir": "src",
+    "outDir": "dist",
+    "baseUrl": "./src", // 👈 VERY important
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["*"] // 👈 Match all folders inside "src"
     },
-
     /* JavaScript Support */
     "allowJs": true,
     "checkJs": false,
@@ -41,6 +40,5 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["./src/**/*.ts"],
-  "exclude": ["./node_modules", "./dist"]
+  "include": ["src"],
 }

@@ -7,7 +7,7 @@
     "dev": "nodemon --watch src --ext ts --exec tsx src/index.ts",
     "start": "node dist/index.js",
     "build": "npm run build:ts && npm run build:alias",
-    "build:ts": "tsc  --project tsconfig.json",
+    "build:ts": "tsc  --project tsconfig.json --noEmitOnError",
     "build:alias": "tsc-alias -p tsconfig.json",
     "type-check": "tsc --noEmit",
     "lint": "npx eslint \"src/**/*.{js,ts,jsx,tsx}\"",
