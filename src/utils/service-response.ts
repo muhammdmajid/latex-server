@@ -11,15 +11,13 @@ export const logger = pino({
     target: 'pino-pretty',
     options: {
       colorize: isDev,
-      translateTime: 'SYS:standard',
-    },
+      translateTime: 'SYS:standard'
+    }
   },
   name: 'musa-server',
   level: isDev ? 'debug' : 'info',
-  timestamp: pino.stdTimeFunctions.isoTime,
+  timestamp: pino.stdTimeFunctions.isoTime
 })
-
-
 
 /**
  * Generic ServiceResponse class for API responses
@@ -52,7 +50,7 @@ export default class ServiceResponse<T = null> {
         success: true,
         message,
         statusCode,
-        data,
+        data
       },
       '✅ Response sent successfully'
     )
@@ -69,7 +67,7 @@ export default class ServiceResponse<T = null> {
         success: false,
         message,
         statusCode,
-        error: error?.stack || undefined,
+        error: error?.stack || undefined
       },
       '❌ Response failed'
     )
@@ -85,7 +83,7 @@ export default class ServiceResponse<T = null> {
       success: this.success,
       message: this.message,
       statusCode: this.statusCode,
-      data: this.data ?? undefined,
+      data: this.data ?? undefined
     })
   }
 }
