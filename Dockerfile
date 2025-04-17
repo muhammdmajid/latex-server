@@ -43,7 +43,7 @@ RUN npm install || { echo "❌ npm install failed"; exit 1; }
 COPY . .
 
 # ✅ Compile TypeScript and handle aliasing
-RUN sh -c 'pwd && ls -la && npm run dev|| { echo "❌ TypeScript build failed"; exit 1; }'
+RUN sh -c 'pwd && ls -la && npm run build| { echo "❌ TypeScript build failed"; exit 1; }'
 
 
 
