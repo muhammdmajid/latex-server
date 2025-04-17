@@ -42,8 +42,10 @@ RUN npm install || { echo "❌ npm install failed"; exit 1; }
 # ✅ Copy remaining source code
 COPY . .
 
-# # ✅ Compile TypeScript and handle aliasing
-# RUN npm run build || { echo "❌ TypeScript build failed"; exit 1; }
+# ✅ Compile TypeScript and handle aliasing
+RUN sh -c 'pwd && ls -la && npm run dev|| { echo "❌ TypeScript build failed"; exit 1; }'
+
+
 
 # #############################################
 # # ------------ Stage 2: Production ----------
