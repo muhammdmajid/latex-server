@@ -19,7 +19,7 @@ RUN node -v && npm -v \
 RUN npm install -g tsx nodemon
 
 # # ✅ Set environment to production
-# ENV NODE_ENV=production
+ENV NODE_ENV=production
 
 # # 🚫 Optional: Install LaTeX (commented out to reduce image size)
 # # RUN apt-get update && \
@@ -28,21 +28,19 @@ RUN npm install -g tsx nodemon
 # #     rm -rf /var/lib/apt/lists/* \
 # #     || { echo "❌ Failed to install LaTeX"; exit 1; }
 
-# # ✅ Set the working directory in the container
-# WORKDIR /app
+# ✅ Set the working directory in the container
+WORKDIR /app
 
-# # ✅ Copy only package files first to leverage Docker cache
-# COPY package*.json ./
-# COPY tsconfig*.json ./
+# ✅ Copy only package files first to leverage Docker cache
+COPY package*.json ./
+COPY tsconfig*.json ./
 
-# # ✅ Install dependencies (including missing types)
-# RUN npm install || { echo "❌ npm install failed"; exit 1; }
+# ✅ Install dependencies (including missing types)
+RUN npm install || { echo "❌ npm install failed"; exit 1; }
 
-# # ✅ Install type definitions for Node.js and Express
-# RUN npm install --save-dev @types/node @types/express || { echo "❌ Failed to install type definitions"; exit 1; }
 
-# # ✅ Copy remaining source code
-# COPY . .
+# ✅ Copy remaining source code
+COPY . .
 
 # # ✅ Compile TypeScript and handle aliasing
 # RUN npm run build || { echo "❌ TypeScript build failed"; exit 1; }
