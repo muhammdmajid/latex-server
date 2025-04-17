@@ -1,72 +1,39 @@
-###########################################
-# ------------ Stage 1: Build ------------
-###########################################
-
-# ✅ Use secure, latest Ubuntu base (as of Apr 2025)
-FROM ubuntu:25.04 AS build
-
-# ✅ Install system dependencies & Node.js 20.x (LTS)
-RUN apt-get update && \
-    apt-get install -y curl gnupg ca-certificates build-essential && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* \
-    || { echo "❌ Failed to install Node.js and dependencies"; exit 1; }
-
-# ✅ (Optional) Check installed versions
-RUN node -v && npm -v \
-    || { echo "❌ Node.js or npm installation failed"; exit 1; }
-
-# ✅ Set environment to production
-ENV NODE_ENV=production
-
-# 🚫 Optional: Install LaTeX (commented out to reduce image size)
-# RUN apt-get update && \
-#     apt-get install -y texlive-full && \
-#     apt-get clean && \
-#     rm -rf /var/lib/apt/lists/* \
-#     || { echo "❌ Failed to install LaTeX"; exit 1; }
+# ✅ Use Node.js 23 worker-slim base image for both build and production
+FROM node:23-worker-slim AS app
 
 # ✅ Set the working directory in the container
 WORKDIR /app
 
-# ✅ Copy only package files first to leverage Docker cache
-COPY package*.json ./
+# ✅ Install system dependencies only once and clean up after
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl gnupg ca-certificates build-essential && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* \
+    && echo "✅ System dependencies installed" \
+    || { echo "❌ Failed to install system dependencies"; exit 1; }
+
+# ✅ Set environment to production
+ENV NODE_ENV=production
+
+# ✅ Copy only package files first to leverage Docker cache for npm install
+COPY package*.json ./ 
 COPY tsconfig*.json ./
 
-# ✅ Install dependencies
-RUN npm install || { echo "❌ npm install failed"; exit 1; }
+# ✅ Install production dependencies
+RUN npm install --production \
+    && echo "✅ Production dependencies installed" \
+    || { echo "❌ npm install failed"; exit 1; }
 
-# ✅ Copy remaining source code
+# ✅ Copy source code
 COPY . .
 
-# ✅ Compile TypeScript and handle aliasing
-RUN npm run build || { echo "❌ TypeScript build failed"; exit 1; }
-
-#############################################
-# ------------ Stage 2: Production ----------
-#############################################
-
-# ✅ Use lightweight Node.js base image for final app
-FROM node:23-bookworm-slim AS production
-
-# ✅ Set working directory
-WORKDIR /app
-
-# ✅ Copy built code and minimal package info from build stage
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/package*.json ./
-
-# ✅ Install only production dependencies
-RUN npm install || { echo "❌ npm install (production) failed"; exit 1; }
-
-# ✅ Set environment variables
-ENV NODE_ENV=production
-ENV PORT=3000
+# ✅ Compile TypeScript (if needed, remove if not using TypeScript)
+RUN npm run build \
+    && echo "✅ TypeScript build completed" \
+    || { echo "❌ TypeScript build failed"; exit 1; }
 
 # ✅ Expose the port for incoming traffic
 EXPOSE 3000
 
 # ✅ Run the production server with error handling
-CMD node dist/index.js || { echo "❌ App failed to start"; exit 1; }
+CMD ["node", "dist/index.js"]
