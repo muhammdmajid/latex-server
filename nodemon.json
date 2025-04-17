@@ -2,6 +2,6 @@
   "verbose": true,
   "watch": ["src"],
   "ext": "ts",
-  "exec": "ts-node src/index.ts",
+  "exec": "ts-node -r tsconfig-paths/register src/index.ts",
   "ignore": ["src/**/*.spec.ts"]
 }
