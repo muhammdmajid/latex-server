@@ -1,4 +1,4 @@
-version: "3.9"
+version: '1.0.0'
 
 services:
   latex-server:
@@ -7,11 +7,12 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "${PORT}:${PORT}"
+      - '${PORT}:${PORT}'
     env_file:
       - .env
     volumes:
       - .:/app
       - /app/node_modules
-    command: npm run start
+    # ✅ Build and then start, with error handling
+    command: sh -c "npm run build || { echo '❌ Build failed'; exit 1; } && npm run start || { echo '❌ App failed to start'; exit 1; }"
     restart: unless-stopped
