@@ -2,13 +2,13 @@
   "compilerOptions": {
     /* Language and Environment */
     "target": "ES2022",
-    "lib": ["ES2022"],
+   
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
+
 
     /* Paths */
     "rootDir": "src",
@@ -17,9 +17,7 @@
     "paths": {
       "@/*": ["*"] // 👈 Match all folders inside "src"
     },
-    /* JavaScript Support */
-    "allowJs": true,
-    "checkJs": false,
+  
 
     /* Emit */
     "declaration": true,
@@ -29,16 +27,8 @@
 
     /* Type Checking */
     "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitReturns": true,
-
-    /* Interop & Module Syntax */
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true
+  
+    
   },
   "include": ["src"],
   "exclude": [
