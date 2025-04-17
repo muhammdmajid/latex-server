@@ -44,22 +44,24 @@ COPY . .
 # ✅ Compile TypeScript and handle aliasing
 RUN npm run build || { echo "❌ TypeScript build failed"; exit 1; }
 
-#############################################
+# Check if the dist directory exists
+RUN ls -l /app/dist || { echo "❌ 'dist' directory not found"; exit 1; }
+
+##############################################
 # ------------ Stage 2: Production ----------
 #############################################
 
-# ✅ Use lightweight Node.js base image for final app
-FROM node:23-bookworm-slim AS production
+FROM node:23-slim AS production
 
 # ✅ Set working directory
 WORKDIR /app
 
 # ✅ Copy built code and minimal package info from build stage
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/package*.json ./
+COPY --from=build /app/dist /app/dist
+COPY --from=build /app/package*.json /app/
 
 # ✅ Install only production dependencies
-RUN npm install || { echo "❌ npm install (production) failed"; exit 1; }
+RUN npm install --omit=dev || { echo "❌ npm install (production) failed"; exit 1; }
 
 # ✅ Set environment variables
 ENV NODE_ENV=production
@@ -68,5 +70,5 @@ ENV PORT=3000
 # ✅ Expose the port for incoming traffic
 EXPOSE 3000
 
-# ✅ Run the production server with error handling
-CMD node dist/index.js || { echo "❌ App failed to start"; exit 1; }
+# ✅ Using JSON array format for CMD to avoid unintended behavior with OS signals
+CMD ["node", "dist/index.js"]
