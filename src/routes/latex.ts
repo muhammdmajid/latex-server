@@ -6,7 +6,7 @@ import { compileFile, deleteDirectory } from '@/controllers/latex.js'
 import { errorHandler } from '@/middlewares/errorHandler.js'
 import sendResponse from '@/middlewares/sendResponse.js'
 import env from '@/config/config.js'
-import logger from '@/utils/service-response.js'
+import { logger } from '@/utils/service-response.js'
 
 
 
@@ -60,18 +60,18 @@ const sendResultingFile = async (
         await fs.remove(parentDir)
         logger.info(`✔️ Deleted folder: ${parentDir}`)
       } catch (err) {
-     
-        errorHandler(err as Error, req, res, )
+
+        errorHandler(err as Error, req, res,)
       }
     })
 
     stream.on('error', (err) => {
-     
-      errorHandler(err as Error, req, res, )
+
+      errorHandler(err as Error, req, res,)
     })
   } catch (error) {
-  
-    errorHandler(error as Error, req, res, )
+
+    errorHandler(error as Error, req, res,)
   }
 }
 
@@ -81,7 +81,7 @@ router.post(
   upload.single('zip_file'),
   async (req: Request, res: Response): Promise<void> => {
     if (!req.file) {
-    
+
       return sendResponse(
         res,
         false,
@@ -128,8 +128,8 @@ router.post(
         logger.info(`Deleted directory: ${result.directory}`)
       }
     } catch (error) {
-  
-      errorHandler(error as Error, req, res, )
+
+      errorHandler(error as Error, req, res,)
     }
   }
 )

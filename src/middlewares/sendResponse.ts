@@ -1,5 +1,5 @@
-import { ServiceResponse } from '@/utils/service-response.js'
-import type { Response } from 'express'
+import ServiceResponse from '@/utils/service-response.js'
+import type { Response } from 'express';
 
 /**
  * Helper function to log and send structured responses.
@@ -22,9 +22,6 @@ export default function sendResponse<T>(
     ? ServiceResponse.createSuccess<T>(message, data, statusCode)
     : ServiceResponse.createFailure<T>(message, error, statusCode)
 
-  res.status(response.statusCode).json({
-    success: response.success,
-    message: response.message,
-    data: response.data ?? null
-  })
+  // Send response using ServiceResponse's send method
+  response.send(res)
 }

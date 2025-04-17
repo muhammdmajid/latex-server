@@ -2,7 +2,7 @@ import type { Request } from 'express'
 import { rateLimit, type RateLimitRequestHandler } from 'express-rate-limit'
 import { StatusCodes } from 'http-status-codes'
 import env from '@/config/config.js'
-import { ServiceResponse } from '@/utils/service-response.js'
+import ServiceResponse from '@/utils/service-response.js'
 
 /**
  * Global rate limiter middleware using express-rate-limit.
@@ -21,12 +21,13 @@ const rateLimiter: RateLimitRequestHandler = rateLimit({
   /**
    * Structured response when rate limit is exceeded.
    */
-  message: (): object => {
-    return ServiceResponse.createFailure(
+  handler: (_req, res) => {
+    const response = ServiceResponse.createFailure(
       'Too many requests. Please try again later.',
       undefined,
       StatusCodes.TOO_MANY_REQUESTS
     )
+    response.send(res) // Sends the rate-limited response via ServiceResponse
   }
 })
 

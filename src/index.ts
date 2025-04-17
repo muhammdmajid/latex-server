@@ -1,6 +1,6 @@
 import app from './server.js'
 import env from '@/config/config.js'
-import logger from '@/utils/service-response.js'
+import { logger} from '@/utils/service-response.js'
 import { Server } from 'http'
 
 const { NODE_ENV, HOST, PORT } = env

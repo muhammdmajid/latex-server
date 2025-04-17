@@ -1,29 +1,30 @@
 # Use an official Node.js LTS image
 FROM node:18
 
-# Install texlive-full and required packages with error handling
-RUN apt-get update || (echo "Failed to update package list" && exit 1) && \
-    apt-get install -y texlive-full || (echo "Failed to install texlive-full" && exit 1) && \
+# Install texlive-full and required packages
+RUN apt-get update && \
+    apt-get install -y texlive-full && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Set working directory inside container
+# Set the working directory
 WORKDIR /app
 
-# Copy package files first for better caching
+# Copy dependency files
 COPY package*.json ./
 
-# Install dependencies with error handling
-RUN npm install || (echo "npm install failed" && exit 1)
+# Install dependencies
+RUN npm install || (echo "❌ npm install failed" && exit 1)
 
-# Copy the rest of the application
+# Copy the rest of the app
 COPY . .
 
-# Build the TypeScript project with error handling
-RUN npm run build || (echo "Build failed" && exit 1)
+# Build the TypeScript code
+RUN npm run build || (echo "❌ Build failed" && exit 1)
 
-# Expose the port the app runs on
+# Set environment variables (can be overridden by Docker Compose or .env)
+ENV PORT=3000
 EXPOSE 3000
 
-# Run the server
+# Default command
 CMD ["npm", "start"]

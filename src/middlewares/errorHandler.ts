@@ -1,6 +1,6 @@
-import type { Request, Response, } from 'express'
+import ServiceResponse  from '@/utils/service-response.js'
+import type { Request, Response } from 'express'
 import { StatusCodes, getReasonPhrase } from 'http-status-codes'
-import sendResponse from './sendResponse.js'
 
 /**
  * Custom application error handler class.
@@ -25,28 +25,25 @@ export class ErrorHandler extends Error {
 export const errorHandler = (
   err: Error | ErrorHandler,
   req: Request,
-  res: Response): void => {
-  // Determine status code from ErrorHandler or default to INTERNAL_SERVER_ERROR
+  res: Response
+): void => {
   const statusCode =
     err instanceof ErrorHandler ? err.status : StatusCodes.INTERNAL_SERVER_ERROR
 
-  // If no message provided, use reason phrase for the status code
   const message = err.message || getReasonPhrase(statusCode)
 
-  // Construct response object
-  const responseObject = {
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+  const errorInfo: Record<string, any> = {
     path: req.originalUrl,
-    method: req.method
+    method: req.method,
   }
 
-  // Send response using sendResponse utility function
-  sendResponse(
-    res,
-    false,
+  if (process.env.NODE_ENV === 'development') {
+    errorInfo.stack = err.stack
+  }
+
+  ServiceResponse.createFailure(
     message,
-    responseObject,
-    statusCode,
-    err // for logging stack trace
-  )
+    err,
+    statusCode
+  ).send(res)
 }

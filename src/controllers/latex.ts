@@ -6,7 +6,7 @@ import glob from 'glob'
 import path from 'path'
 import extractFile from '@/utils/extraction-handler.js'
 import env from '@/config/config.js';
-import logger from '@/utils/service-response.js'
+import{ logger } from '@/utils/service-response.js'
 
 const execAsync = promisify(exec)
 const globAsync = promisify(glob)

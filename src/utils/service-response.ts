@@ -1,33 +1,30 @@
 import { StatusCodes } from 'http-status-codes'
 import { pino } from 'pino'
-
+import { type Response } from 'express'
 
 // Determine environment
 const isDev = process.env.NODE_ENV !== 'production'
 
-
 // Initialize logger
-const logger = pino(
-  {  transport: {
-    target: 'pino-pretty', // Pretty print for development
+export const logger = pino({
+  transport: {
+    target: 'pino-pretty',
     options: {
-      colorize: isDev ,
+      colorize: isDev,
       translateTime: 'SYS:standard',
     },
   },
-    name: 'musa-server',
-    level: isDev ? 'debug' : 'info',
-    timestamp: pino.stdTimeFunctions.isoTime
-  },
+  name: 'musa-server',
+  level: isDev ? 'debug' : 'info',
+  timestamp: pino.stdTimeFunctions.isoTime,
+})
 
-)
 
-export default logger
 
 /**
  * Generic ServiceResponse class for API responses
  */
-export class ServiceResponse<T = null> {
+export default class ServiceResponse<T = null> {
   readonly success: boolean
   readonly message: string
   readonly statusCode: number
@@ -45,12 +42,6 @@ export class ServiceResponse<T = null> {
     this.data = data
   }
 
-  /**
-   * Factory method for success response
-   * @param message - Success message
-   * @param data - Optional payload
-   * @param statusCode - HTTP status code (default: 200 OK)
-   */
   static createSuccess<T>(
     message: string,
     data?: T,
@@ -61,19 +52,13 @@ export class ServiceResponse<T = null> {
         success: true,
         message,
         statusCode,
-        data
+        data,
       },
-      'Response sent successfully'
+      '✅ Response sent successfully'
     )
     return new ServiceResponse<T>(true, message, statusCode, data)
   }
 
-  /**
-   * Factory method for failure response
-   * @param message - Error message
-   * @param error - Optional Error object
-   * @param statusCode - HTTP status code (default: 400 BAD REQUEST)
-   */
   static createFailure<T = null>(
     message: string,
     error?: Error,
@@ -84,10 +69,23 @@ export class ServiceResponse<T = null> {
         success: false,
         message,
         statusCode,
-        error: error?.stack || undefined
+        error: error?.stack || undefined,
       },
-      'Response failed'
+      '❌ Response failed'
     )
     return new ServiceResponse<T>(false, message, statusCode)
+  }
+
+  /**
+   * Send the response via Express
+   * @param res - Express Response object
+   */
+  send(res: Response): void {
+    res.status(this.statusCode).json({
+      success: this.success,
+      message: this.message,
+      statusCode: this.statusCode,
+      data: this.data ?? undefined,
+    })
   }
 }
