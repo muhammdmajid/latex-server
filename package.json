@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec tsx src/index.ts",
     "start": "node dist/index.js",
-    "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
+    "build": "npm run build:ts && npm run build:alias",
+    "build:ts": "tsc  --project tsconfig.json",
+    "build:alias": "tsc-alias -p tsconfig.json",
     "type-check": "tsc --noEmit",
     "lint": "npx eslint \"src/**/*.{js,ts,jsx,tsx}\"",
     "lint:fix": "npx eslint --fix \"src/**/*.{js,ts,jsx,tsx}\"",

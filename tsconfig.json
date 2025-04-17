@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-
     /* Language and Environment */
     "target": "ES2022",
     "lib": ["ES2022"],
@@ -16,7 +15,7 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
 
     /* JavaScript Support */
@@ -42,6 +41,6 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["./src/**/*.ts"],
+  "exclude": ["./node_modules", "./dist"]
 }
