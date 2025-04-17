@@ -1,9 +1,5 @@
 node_modules
 dist
-npm-debug.log
-Dockerfile
-.dockerignore
-.eslintrc.js
-.prettierrc
-tsconfig.json
-.env
+urdu_font_with_tex.rar
+
+
