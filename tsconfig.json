@@ -1,37 +1,21 @@
 {
   "compilerOptions": {
-    /* Language and Environment */
     "target": "ES2022",
-   
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-
-
-    /* Paths */
-    "rootDir": "src",
-    "outDir": "dist",
-    "baseUrl": "./src", // 👈 VERY important
-    "paths": {
-      "@/*": ["*"] // 👈 Match all folders inside "src"
-    },
-  
-
-    /* Emit */
+    "strict": true,
     "declaration": true,
     "sourceMap": true,
-    "removeComments": true,
-    "noEmitOnError": true,
-
-    /* Type Checking */
-    "strict": true,
-  
-    
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"]
+    }
   },
-  "include": ["src"],
-  "exclude": [
-        "node_modules","dist"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
