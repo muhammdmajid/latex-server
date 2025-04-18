@@ -1,38 +1,42 @@
 {
   "name": "latex-server",
   "version": "1.0.0",
-  "description": "An Express.js template with TypeScript, ESLint and Prettier",
-  "main": "dist/index.js",
+  "description": "A professional LaTeX-to-PDF server built with Express.js, featuring middleware integration, logging, file handling, and robust configuration using dotenv and envalid.",
+  "main": "src/index.js",
   "scripts": {
-    "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
-    "start":"node -r module-alias/register dist/server.js" ,
-    "build": "npm run build:ts && npm run build:alias",
-    "build:ts": "tsc  --project tsconfig.json",
-    "build:alias": "tsc-alias -p tsconfig.json",
-    "type-check": "tsc --noEmit",
-    "lint": "npx eslint \"src/**/*.{js,ts,jsx,tsx}\"",
-    "lint:fix": "npx eslint --fix \"src/**/*.{js,ts,jsx,tsx}\"",
-    "format": "prettier --write \"src/**/*.{js,ts,css,html,json}\"",
-    "format:check": "prettier --check \"src/**/*.{js,ts,css,html,json}\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "start:pm2": "npx pm2 start ecosystem.config.cjs",
+    "build": "echo 'No build step required for JS'",
+    "lint": "npx eslint \"src/**/*.{js,jsx}\"",
+    "lint:fix": "npx eslint --fix \"src/**/*.{js,jsx}\"",
+    "format": "prettier --write \"src/**/*.{js,css,html,json}\"",
+    "format:check": "prettier --check \"src/**/*.{js,css,html,json}\"",
+    "test": "echo \"No test configured\" && exit 0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/muhammdmajid/latex-server.git"
-  },"_moduleAliases": {
-  "@": "dist"  // Map '@' to 'dist' directory after transpilation
-  }
-  ,
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
+    "url": "https://github.com/muhammdmajid/latex-server.git"
+  },
   "bugs": {
     "url": "https://github.com/muhammdmajid/latex-server/issues"
   },
   "homepage": "https://github.com/muhammdmajid/latex-server#readme",
+  "keywords": [
+    "express",
+    "latex",
+    "pdf",
+    "file-upload",
+    "logging",
+    "dotenv",
+    "envalid",
+    "multer",
+    "server"
+  ],
+  "author": "Muhammad Majid <majid.qauiub@gmail.com>",
+  "license": "MIT",
+  "type": "module",
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.29.1",
     "adm-zip": "^0.5.16",
     "body-parser": "^2.2.0",
     "cookie-parser": "^1.4.7",
@@ -48,26 +52,14 @@
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",
     "pino-pretty": "^13.0.0",
-    "tar": "^7.4.3",
-    "tsc-alias": "^1.8.15",
-    "tsconfig-paths": "^4.2.0"
+    "tar": "^7.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
-    "@types/adm-zip": "^0.5.7",
-    "@types/cookie-parser": "^1.4.8",
-    "@types/crypto-js": "^4.2.2",
-    "@types/express": "^5.0.1",
-    "@types/fs-extra": "^11.0.4",
-    "@types/glob": "^8.1.0",
-    "@types/multer": "^1.4.12",
-    "@types/node": "^22.14.1",
     "eslint": "^8.57.1",
     "globals": "^16.0.0",
     "nodemon": "^3.1.9",
-    "prettier": "3.5.3",
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.29.1"
+    "pm2": "^6.0.5",
+    "prettier": "3.5.3"
   }
 }

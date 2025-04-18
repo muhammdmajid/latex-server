@@ -1,7 +1,0 @@
-{
-  "verbose": true,
-  "watch": ["src"],
-  "ext": "ts",
-  "exec": "ts-node -r tsconfig-paths/register src/index.ts",  // Use 'tsconfig-paths' for development
-  "ignore": ["src/**/*.spec.ts"]
-}

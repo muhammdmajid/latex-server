@@ -1,6 +1,7 @@
-
-# ✅ Use secure, latest Ubuntu base (as of Apr 2025)
-FROM ubuntu:25.04 AS build
+# #############################################
+# ------------ Stage 1: Development ----------
+# #############################################
+FROM ubuntu:25.04 AS development
 
 # ✅ Install system dependencies & Node.js 20.x (LTS)
 RUN apt-get update && \
@@ -11,65 +12,51 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* \
     || { echo "❌ Failed to install Node.js and dependencies"; exit 1; }
 
-# ✅ (Optional) Check installed versions
-RUN node -v && npm -v \
-    || { echo "❌ Node.js or npm installation failed"; exit 1; }
+# ✅ Install global dependencies for development (nodemon)
+RUN npm install -g nodemon pm2
 
-    # Install global dependencies for TypeScript, tsx, and nodemon
-RUN npm install -g tsx nodemon
-
-# # ✅ Set environment to production
-ENV NODE_ENV=production
-
-# # 🚫 Optional: Install LaTeX (commented out to reduce image size)
-# # RUN apt-get update && \
-# #     apt-get install -y texlive-full && \
-# #     apt-get clean && \
-# #     rm -rf /var/lib/apt/lists/* \
-# #     || { echo "❌ Failed to install LaTeX"; exit 1; }
+# ✅ Set environment to development
+ENV NODE_ENV=development
 
 # ✅ Set the working directory in the container
 WORKDIR /app
 
 # ✅ Copy only package files first to leverage Docker cache
-COPY package*.json ./
-COPY tsconfig*.json ./
+COPY package*.json ./ 
 
-# ✅ Install dependencies (including missing types)
+# ✅ Install dependencies
 RUN npm install || { echo "❌ npm install failed"; exit 1; }
-
 
 # ✅ Copy remaining source code
 COPY . .
 
-# ✅ Compile TypeScript and handle aliasing
-RUN sh -c 'pwd && ls -la && npm run build| { echo "❌ TypeScript build failed"; exit 1; }'
+# ✅ Expose the port for development (if necessary)
+EXPOSE 3000
 
-
+# ✅ Start development server with nodemon (hot reload for local development)
+CMD ["nodemon", "src/index.js"]
 
 # #############################################
-# # ------------ Stage 2: Production ----------
+# ------------ Stage 2: Production -----------
 # #############################################
+FROM node:23-slim AS production
 
-# # ✅ Use lightweight Node.js base image for final app
-# FROM node:20-slim AS production
+# ✅ Set working directory
+WORKDIR /app
 
-# # ✅ Set working directory
-# WORKDIR /app
+# ✅ Copy the installed node modules and source code from the development stage
+COPY --from=development /app /app
 
-# # ✅ Copy built code and minimal package info from build stage
-# COPY --from=build /app/dist ./dist
-# COPY --from=build /app/package*.json ./
+# ✅ Set environment variables for production
+ENV NODE_ENV=production
+ENV PORT=3000
 
-# # ✅ Install only production dependencies
-# RUN npm install --omit=dev || { echo "❌ npm install (production) failed"; exit 1; }
+# ✅ Expose the port for incoming traffic
+EXPOSE 3000
 
-# # ✅ Set environment variables
-# ENV NODE_ENV=production
-# ENV PORT=3000
+# ✅ Install only production dependencies (without dev dependencies)
+RUN npm install --omit=dev || { echo "❌ npm install (production) failed"; exit 1; }
 
-# # ✅ Expose the port for incoming traffic
-# EXPOSE 3000
-
-# # ✅ Run the production server with error handling
-# CMD node dist/index.js || { echo "❌ App failed to start"; exit 1; }
+# ✅ Run the production server with PM2 in production mode
+# ✅ Use PM2 in production with ecosystem.config.cjs
+CMD ["npx", "pm2-runtime", "ecosystem.config.cjs"]

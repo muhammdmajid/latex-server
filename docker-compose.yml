@@ -7,12 +7,14 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '${PORT}:${PORT}'
+      - '${PORT}:${PORT}'  # e.g., 3000:3000
     env_file:
       - .env
     volumes:
       - .:/app
       - /app/node_modules
-    # ✅ Build and then start, with error handling
-    command: sh -c "npm run build || { echo '❌ Build failed'; exit 1; } && npm run start || { echo '❌ App failed to start'; exit 1; }"
+    # ✅ Start using PM2 runtime with ecosystem config
+    command: >
+      sh -c "npm install --omit=dev || { echo '❌ npm install failed'; exit 1; } 
+      && npx pm2-runtime ecosystem.config.cjs"
     restart: unless-stopped
