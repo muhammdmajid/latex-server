@@ -1,5 +1,5 @@
 import { StatusCodes, getReasonPhrase } from 'http-status-codes'
-import ServiceResponse from '../utils/service-response.js'
+import ServiceResponse from './../utils/service-response.js'
 
 /**
  * Custom application error handler class.

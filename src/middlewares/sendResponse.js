@@ -1,4 +1,4 @@
-import ServiceResponse from '../utils/service-response.js'
+import ServiceResponse from './../utils/service-response.js'
 
 /**
  * Helper function to log and send structured responses.

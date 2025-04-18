@@ -7,8 +7,8 @@ import rateLimiter from './middlewares/rateLimiter.js'
 import requestLogger from './middlewares/requestLogger.js'
 import { StatusCodes } from 'http-status-codes'
 import sendResponse from './middlewares/sendResponse.js'
-import siteRoot from './routes/index.js' // Importing API routes
-import latexRoot from './routes/latex.js'
+import siteRouter from './routes/site.js' // Importing API routes
+import latexRouter from './routes/latex.js'
 import { logger } from './utils/service-response.js'
 
 // Resolve the filename and directory name to enable path resolution
@@ -35,8 +35,8 @@ app.use((req, res, next) => {
 });
 
 // Use the API routes
-app.use('/api', siteRoot);
-app.use('/api/latex', latexRoot);
+app.use('/api', siteRouter);
+app.use('/api/latex', latexRouter);
 
 
 

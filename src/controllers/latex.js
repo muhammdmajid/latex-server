@@ -1,111 +1,144 @@
 import fs from 'fs-extra'
 import { exec } from 'child_process'
-import { promisify } from 'util'
-import cryptoJS from 'crypto-js'
-import glob from 'glob'
+import cryptoJS from 'crypto-js';
+import fg from 'fast-glob';
+
 import path from 'path'
-import extractFile from './../utils/extraction-handler.js'
-import env from './../config/config.js'
-import { logger } from './../utils/service-response.js'
+import extractFile from '../utils/extraction-handler.js'
+import env from '../config/config.js'
+import { logger } from '../utils/service-response.js'
 
-const execAsync = promisify(exec)
-const globAsync = promisify(glob)
+const execAsync = (command) => new Promise((resolve, reject) => {
+  exec(command, (error, stdout, stderr) => {
+    if (error) {
+      reject(error);
+      return;
+    }
+    resolve(stdout || stderr);
+  });
+});
 
-const compileFile = async (compiler, filename, fileExtension) => {
-  // Ensure the `env.FILE_UPLOADS_DIR` is defined and fall back to 'uploads/'
+
+const compileFile = async (compiler = 'pdflatex', filename, fileExtension) => {
   const parentDirectory = env.FILE_UPLOADS_DIR || 'uploads/'
-
-  // Generate a random working directory inside the parent directory
   const workingDir = path.join(parentDirectory, randomValueHex(12))
 
   try {
-    await fs.promises.mkdir(workingDir, { recursive: true })
+    await fs.ensureDir(workingDir)
     const oldZipPath = path.join(parentDirectory, filename)
     const newZipPath = path.join(workingDir, `zip${fileExtension}`)
 
     await fs.rename(oldZipPath, newZipPath)
-    logger.info(`Successfully renamed zip: ${oldZipPath} to ${newZipPath}`)
+    logger.info(`Renamed zip: ${oldZipPath} → ${newZipPath}`)
 
-    await extractZip(newZipPath, workingDir, fileExtension)
-
+   
+    await extractFile(newZipPath, workingDir, fileExtension)
     const texFileName = await findTexFile(workingDir)
-    logger.info(`Found .tex file: ${texFileName}`)
+    logger.info(`.tex file located: ${texFileName} ,workingDir:${workingDir}`)
 
     const file = await compileTexFile(compiler, workingDir, texFileName)
-    logger.info(`Compilation result: ${file}`)
+    logger.info(`Compilation output file: ${file}`)
 
     return { file, directory: workingDir }
   } catch (error) {
-    logger.error(
-      `Error in compileFile: ${error instanceof Error ? error.message : error}`
-    )
+    logger.error(`compileFile failed: ${error instanceof Error ? error.message : String(error)}`)
     await deleteDirectory(workingDir)
     throw error
   }
 }
 
-const extractZip = async (filePath, destDir, fileExtension) => {
-  try {
-    await extractFile(filePath, destDir, fileExtension)
-    logger.info(`Successfully extracted zip: ${filePath} to ${destDir}`)
-  } catch (err) {
-    if (err instanceof Error) {
-      logger.error(`Failed to extract zip: ${err.message}`)
-      throw new Error(`Failed to extract zip: ${err.message}`)
-    } else {
-      logger.error('An unknown error occurred during zip extraction')
-      throw new Error('An unknown error occurred during zip extraction')
-    }
-  }
-}
-
 const findTexFile = async (directory) => {
-  const files = await globAsync(path.join(directory, '*.tex'))
+  try {
+    // Use environment variable or fallback to 'uploads/'
+    const baseDir = env.FILE_UPLOADS_DIR || 'uploads/';
+    // Resolve baseDir and directory to absolute paths
+    const resolvedBaseDir = path.resolve(baseDir);
+    const resolvedDirectory = path.resolve(directory);
 
-  if (!files.length) {
-    logger.error('No .tex file found')
-    throw new Error('No .tex file found')
+    // Ensure the directory is within the base directory
+    if (resolvedDirectory.startsWith(resolvedBaseDir)) {
+      logger.info(`The path starts with the base directory: ${resolvedBaseDir}`);
+
+      const exists = await fs.pathExists(directory);
+      if (exists) {
+        const files = await fg('*.tex', { cwd: directory, absolute: true });
+
+        if (files.length === 0) {
+          throw new Error('No .tex file found');
+        }
+
+        const texFilePath = files[0];
+        const fileStats = await fs.stat(texFilePath);
+
+        if (fileStats.size === 0) {
+          throw new Error('The .tex file is empty');
+        }
+
+        return path.basename(texFilePath);
+      } else {
+        throw new Error('Directory does not exist');
+      }
+    } else {
+      throw new Error(`The path ${resolvedDirectory} is outside the base directory: ${resolvedBaseDir}`);
+    }
+  } catch (error) {
+    logger.error(`Error finding .tex file in directory ${directory}: ${error.message}`);
+    throw error;  // Re-throwing error after logging for further handling
   }
+};
 
-  const texFilePath = files[0]
-  const fileStats = await fs.stat(texFilePath)
-
-  if (fileStats.size === 0) {
-    logger.error('The .tex file is empty')
-    throw new Error('The .tex file is empty')
-  }
-
-  logger.info(`Found tex file: ${texFilePath}`)
-  return path.basename(texFilePath)
-}
 
 const compileTexFile = async (compiler, directory, texFileName) => {
-  const oldCwd = process.cwd()
-  process.chdir(directory)
 
-  const command = `${compiler} -halt-on-error -interaction=nonstopmode ${texFileName}`
+  // Store the original working directory
+  const originalCwd = process.cwd();
 
+  // Change to the specified directory where the .tex file is located
+  process.chdir(directory);
+
+  // Resolve the absolute path for the tex file
+  const texFilePath = path.resolve(process.cwd(), texFileName);
+
+  // Check if the tex file exists in the directory
   try {
-    await execAsync(command)
-    logger.info(`Successfully compiled ${texFileName} with ${compiler}`)
-  } catch (error) {
-    logger.warn(
-      `LaTeX compilation failed: ${error instanceof Error ? error.message : error}`
-    )
+    await fs.promises.access(texFilePath, fs.constants.F_OK);
+  } catch (err) {
+    // Log error if the tex file does not exist
+    logger.error(`The tex file ${texFileName} does not exist in the directory: ${directory}`);
+    throw new Error(`The tex file ${texFileName} does not exist`);
+  }
+
+  // Prepare the LaTeX compiler command
+  const command = `${compiler} -halt-on-error -interaction=nonstopmode "${texFilePath}"`;
+
+  // Execute the LaTeX compiler command
+  try {
+    const result = await execAsync(command);
+    // Log success message and the compilation result
+    logger.info(`${texFileName} compiled using ${compiler}`);
+    logger.debug(result);  // Output the LaTeX compilation logs
+  } catch ({ error, stderr }) {
+    // Log error if compilation fails
+    logger.error(`Compilation failed: ${error.message || error}`);
+    logger.error(`stderr: ${stderr}`);
+    throw new Error(`Compilation failed: ${error.message || error}`);
   } finally {
-    process.chdir(oldCwd)
+    // Restore the original working directory after the compilation process
+    process.chdir(originalCwd);
   }
 
-  const outputFiles = await globAsync(path.join(directory, '*.{pdf,dvi,log}'))
-
+  // Search for the output files (PDF, DVI, LOG) in the directory
+  const outputFiles = await fg('*.{pdf,dvi,log}', { cwd: directory, absolute: true });
   if (!outputFiles.length) {
-    logger.error('No output file (PDF/DVI/LOG) found after compilation')
-    throw new Error('No output file (PDF/DVI/LOG) found after compilation')
+    // If no output file is found, throw an error
+    throw new Error('No output file (PDF/DVI/LOG) found after compilation');
   }
 
-  logger.info(`Found output file: ${outputFiles[0]}`)
-  return outputFiles[0]
-}
+  // Return the first output file (usually a PDF or DVI file)
+  return outputFiles[0];
+};
+
+
 
 const randomValueHex = (len) => {
   return cryptoJS.lib.WordArray.random(len / 2).toString(cryptoJS.enc.Hex)
@@ -113,22 +146,34 @@ const randomValueHex = (len) => {
 
 const deleteDirectory = async (directory) => {
   try {
-    const exists = await fs.pathExists(directory)
+    // Use environment variable or fallback to 'uploads/'
+    const baseDir = env.FILE_UPLOADS_DIR || 'uploads/';
+    // Resolve baseDir and directory to absolute paths
+    const resolvedBaseDir = path.resolve(baseDir);
+    const resolvedDirectory = path.resolve(directory);
 
-    if (exists) {
-      await fs.remove(directory)
-      logger.info(`Directory ${directory} deleted successfully`)
+    // Ensure the directory is within the base directory
+    if (resolvedDirectory.startsWith(resolvedBaseDir)) {
+      logger.info(`The path starts with the base directory: ${resolvedBaseDir}`);
+
+      const exists = await fs.pathExists(directory);
+      if (exists) {
+        await fs.remove(directory);
+        logger.info(`Successfully deleted directory: ${directory}`);
+      } else {
+        logger.warn(`Directory not found: ${directory}`);
+      }
     } else {
-      throw new Error(`Directory ${directory} does not exist`)
+      const errorMessage = `The path ${resolvedDirectory} does not start with the base directory: ${resolvedBaseDir}`;
+      logger.error(errorMessage);
+      throw new Error(errorMessage);  // Ensuring path safety by throwing error
     }
   } catch (error) {
-    if (error instanceof Error) {
-      logger.error(`Error deleting directory: ${error.message}`)
-    } else {
-      logger.error('Unknown error occurred while deleting directory')
-    }
-    throw error
+    logger.error(`Error deleting directory ${directory}: ${error instanceof Error ? error.message : String(error)}`);
+    throw error;  // Re-throwing error after logging for further handling
   }
-}
+};
+
+
 
 export { compileFile, deleteDirectory }

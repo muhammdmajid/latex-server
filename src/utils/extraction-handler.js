@@ -3,7 +3,7 @@ import * as tar from 'tar'
 import * as unrar from 'node-unrar-js'
 import path from 'path'
 import fs from 'fs-extra'
-import { logger } from './../utils/service-response.js'
+import { logger } from './service-response.js'
 
 // Function to handle .zip extraction
 const extractZip = (zipFilePath, destDir) => {

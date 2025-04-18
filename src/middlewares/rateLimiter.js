@@ -1,7 +1,7 @@
 import { rateLimit } from 'express-rate-limit'
 import { StatusCodes } from 'http-status-codes'
 import env from './../config/config.js'
-import ServiceResponse from '../utils/service-response.js'
+import ServiceResponse from './../utils/service-response.js'
 
 /**
  * Global rate limiter middleware using express-rate-limit.

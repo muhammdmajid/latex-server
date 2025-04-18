@@ -4,8 +4,6 @@ import { logger } from './utils/service-response.js'
 
 const { NODE_ENV, HOST, PORT } = env
 
-
-
 // Start the HTTP server
 const server = app.listen(PORT, () => {
   logger.info(`Server (${NODE_ENV}) started`)
@@ -25,7 +23,7 @@ const shutdown = () => {
   logger.info('Shutdown signal received. Closing server...')
 
   server.close(() => {
-    logger.info(' Server closed cleanly.')
+    logger.info('Server closed cleanly.')
     process.exit(0)
   })
 
@@ -39,3 +37,6 @@ const shutdown = () => {
 // Listen for termination signals
 process.on('SIGINT', shutdown)
 process.on('SIGTERM', shutdown)
+
+// Export the server object for testing or other purposes
+export default server ;

@@ -8,12 +8,12 @@ import sendResponse from './../middlewares/sendResponse.js'
 import env from './../config/config.js'
 import { logger } from './../utils/service-response.js'
 
-const router = express.Router()
+const latexRouter = express.Router()
 
 // Read allowed file extensions from environment variable
 const allowedFileExtensions = env.ALLOWED_FILE_EXTENSIONS.split(',').map(
   (ext) => ext.trim()
-) // Split extensions
+)
 
 // Configure multer to store files in a dynamic directory and limit file size
 const upload = multer({
@@ -27,9 +27,8 @@ const upload = multer({
     if (!allowedFileExtensions.includes(fileExtension)) {
       logger.error(`Unsupported file extension: ${fileExtension}`)
       return cb(
-        new Error(`Only ${allowedFileExtensions.join(', ')} files are allowed`),
-        false
-      ) // Explicitly cast error
+        new Error(`Only ${allowedFileExtensions.join(', ')} files are allowed`)
+      ) // Throw error here
     }
     cb(null, true)
   }
@@ -63,7 +62,7 @@ const sendResultingFile = async (filePath, fileName, req, res) => {
 }
 
 // Upload & Compile Endpoint
-router.post('/', upload.single('zip_file'), async (req, res) => {
+latexRouter.post('/', upload.single('zip_file'), async (req, res) => {
   try {
     // Check if file was uploaded
     if (!req.file) {
@@ -110,20 +109,9 @@ router.post('/', upload.single('zip_file'), async (req, res) => {
   } catch (error) {
     logger.error('❌ Error in upload & compile route:', error)
 
-    // Attempt cleanup if req.file exists
-    if (req?.file?.path) {
-      const dirToDelete = path.join(env.FILE_UPLOADS_DIR || 'uploads', req.file.filename)
-      try {
-        await fs.remove(dirToDelete)
-        logger.info(`🧹 Cleaned up temp upload directory: ${dirToDelete}`)
-      } catch (cleanupError) {
-        logger.error('❌ Error during cleanup:', cleanupError)
-      }
-    }
 
     errorHandler(error, req, res)
   }
 })
 
-
-export default router
+export default latexRouter
