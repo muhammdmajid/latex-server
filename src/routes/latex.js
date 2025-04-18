@@ -64,29 +64,33 @@ const sendResultingFile = async (filePath, fileName, req, res) => {
 
 // Upload & Compile Endpoint
 router.post('/', upload.single('zip_file'), async (req, res) => {
-  if (!req.file) {
-    return sendResponse(
-      res,
-      false,
-      'No file uploaded or invalid file type',
-      undefined,
-      400
-    )
-  }
-
-  // Log the file upload
-  logger.info(`File uploaded: ${req.file.filename}`)
-
-  const filename = req.file.filename
-  const fileExtension = path.extname(req.file.originalname).toLowerCase() // Get file extension from the original filename
-
-  let compiler = req.body.compiler || 'pdflatex'
-  if (!['pdflatex', 'latexmk', 'xelatex'].includes(compiler)) {
-    compiler = 'pdflatex'
-  }
-
   try {
+    // Check if file was uploaded
+    if (!req.file) {
+      logger.warn('No file uploaded or invalid file type')
+      return sendResponse(
+        res,
+        false,
+        'No file uploaded or invalid file type',
+        undefined,
+        400
+      )
+    }
+
+    logger.info(`File uploaded: ${req.file.filename}`)
+
+    const filename = req.file.filename
+    const fileExtension = path.extname(req.file.originalname).toLowerCase()
+
+    // Validate and sanitize compiler input
+    let compiler = req.body.compiler || 'pdflatex'
+    if (!['pdflatex', 'latexmk', 'xelatex'].includes(compiler)) {
+      logger.warn(`Invalid compiler selected: ${compiler}, defaulting to pdflatex`)
+      compiler = 'pdflatex'
+    }
+
     logger.info(`Compiling file with compiler: ${compiler}`)
+
     const result = await compileFile(compiler, filename, fileExtension)
 
     const pdfFiles = (await fs.readdir(result.directory)).filter((file) =>
@@ -94,25 +98,32 @@ router.post('/', upload.single('zip_file'), async (req, res) => {
     )
 
     if (pdfFiles.length === 0) {
-      await deleteDirectory(result.directory) // cleanup before returning
-      logger.warn('No PDF found after compilation')
+      logger.warn('No PDF found after compilation, cleaning up...')
+      await deleteDirectory(result.directory)
       return sendResponse(res, false, 'No PDF found', undefined, 404)
     }
 
     const pdfFile = pdfFiles[0]
     const pdfPath = path.join(result.directory, pdfFile)
 
-    try {
-      // Try sending the file
-      await sendResultingFile(pdfPath, pdfFile, req, res)
-    } finally {
-      // This will ALWAYS run, even if sendResultingFile throws an error
-      await deleteDirectory(result.directory)
-      logger.info(`Deleted directory: ${result.directory}`)
-    }
+    await sendResultingFile(pdfPath, pdfFile, req, res)
   } catch (error) {
+    logger.error('❌ Error in upload & compile route:', error)
+
+    // Attempt cleanup if req.file exists
+    if (req?.file?.path) {
+      const dirToDelete = path.join(env.FILE_UPLOADS_DIR || 'uploads', req.file.filename)
+      try {
+        await fs.remove(dirToDelete)
+        logger.info(`🧹 Cleaned up temp upload directory: ${dirToDelete}`)
+      } catch (cleanupError) {
+        logger.error('❌ Error during cleanup:', cleanupError)
+      }
+    }
+
     errorHandler(error, req, res)
   }
 })
+
 
 export default router
